@@ -1,0 +1,69 @@
+{
+  "name": "Book Review",
+  "version": "1.0.0",
+  "main": "./src/app.ts",
+  "scripts": {
+    "dev": "nodemon -r tsconfig-paths/register src/app.ts",
+    "start": "ts-node -r tsconfig-paths/register src/app.ts",
+    "build": "tsc",
+    "cluster-mode": "pm2 start src/app.ts --interpreter ts-node -i 0",
+    "cluster-mode-foreground": "pm2 start src/app.ts --interpreter ts-node --no-daemon -i 0",
+    "stop-cluster": "pm2 stop all",
+    "delete-cluster": "pm2 delete all",
+    "list-clusters": "pm2 list",
+    "monitor-cluster": "pm2 monit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Devtown-India/Job-Portal-Backend.git"
+  },
+  "keywords": [
+    "nodejs",
+    "sequalize",
+    "express",
+    "postgres",
+    "typescipt"
+  ],
+  "author": "Dhanraj",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Devtown-India/Job-Portal-Backend/issues"
+  },
+  "homepage": "https://github.com/Devtown-India/Job-Portal-Backend#readme",
+  "description": "",
+  "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "@faker-js/faker": "^9.7.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "eslint": "^9.24.0",
+    "globals": "^16.0.0",
+    "lint-staged": "^15.5.1",
+    "nodemon": "^3.1.9",
+    "pino": "^9.6.0",
+    "pm2": "^5.4.3",
+    "prettier": "3.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.30.1"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.787.0",
+    "@aws-sdk/s3-request-presigner": "^3.787.0",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "express-fileupload": "^1.5.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.15.1",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.14.1",
+    "nodemailer": "^6.10.1",
+    "pg": "^8.14.1",
+    "pg-hstore": "^2.3.4",
+    "pino-pretty": "^13.0.0",
+    "sequelize": "^6.37.7",
+    "tsconfig-paths": "^4.2.0"
+  }
+}
