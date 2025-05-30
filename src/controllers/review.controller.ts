@@ -10,6 +10,7 @@ import {
   SUCCESS_CODE,
   RESOURCE_NOT_FOUND,
 } from "@constants/serverCode";
+import logger from "@utils/pino";
 
 class ReviewController {
   // Create a new review (one review per user per book)
@@ -55,7 +56,7 @@ class ReviewController {
 
       return ReS(res, SUCCESS_CODE, "Review created successfully", review);
     } catch (error) {
-      console.error("Error creating review:", error);
+       logger.error(`Error creating review: ${error}`)
       return ReE(res, SERVER_ERROR_CODE, "Something went wrong");
     }
   }
@@ -93,7 +94,7 @@ class ReviewController {
 
       return ReS(res, SUCCESS_CODE, "Review updated successfully", review);
     } catch (error) {
-      console.error("Error updating review:", error);
+       logger.error(`Error updating review:: ${error}`)
       return ReE(res, SERVER_ERROR_CODE, "Something went wrong");
     }
   }
@@ -127,43 +128,50 @@ class ReviewController {
 
       return ReS(res, SUCCESS_CODE, "Review deleted successfully");
     } catch (error) {
-      console.error("Error deleting review:", error);
+      logger.error(`Error deleting review: ${error}`)
       return ReE(res, SERVER_ERROR_CODE, "Something went wrong");
     }
   }
 
   // Get reviews for a book (with pagination)
-  async getReviews(req: Request, res: Response) {
-    try {
-      const { id: bookId } = req.params;
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const skip = (page - 1) * limit;
+async getReviews(req: Request, res: Response) {
+  try {
+    const { id: bookId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
 
-      // Check if book exists
-      const book = await Book.findById(bookId);
-      if (!book) return ReE(res, RESOURCE_NOT_FOUND, "Book not found");
+    // Check if book exists
+    const book = await Book.findById(bookId);
+    if (!book) return ReE(res, RESOURCE_NOT_FOUND, "Book not found");
 
-      // Get reviews with pagination and populate user info if needed
-      const reviews = await Review.find({ book: bookId })
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 });
+    // Fetch reviews with pagination and populate user info (only name and profile_image)
+    const reviews = await Review.find({ book: bookId })
+      .populate({
+        path: "user",
+        select: "name profile_image", // Only fetch name and profile_image from user
+      })
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
-      const totalReviews = await Review.countDocuments({ book: bookId });
-      const totalPages = Math.ceil(totalReviews / limit);
+    const totalReviews = await Review.countDocuments({ book: bookId });
+    const totalPages = Math.ceil(totalReviews / limit);
 
-      return ReS(res, SUCCESS_CODE, "Reviews fetched successfully", {
-        reviews,
-        totalReviews,
-        totalPages,
-        currentPage: page,
-      });
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-      return ReE(res, SERVER_ERROR_CODE, "Something went wrong");
-    }
+    return ReS(res, SUCCESS_CODE, "Reviews fetched successfully", {
+      review_data:{
+        book,reviews
+      },
+      totalReviews,
+      totalPages,
+      currentPage: page,
+    });
+  } catch (error) {
+    logger.error(`Error fetching reviews: ${error}`);
+    return ReE(res, SERVER_ERROR_CODE, "Something went wrong");
   }
+}
+
 }
 
 export default new ReviewController();

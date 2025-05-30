@@ -1,0 +1,40 @@
+Table users {
+  id              varchar [pk, unique]      // Use varchar for ObjectId
+  name            varchar [not null]
+  username        varchar [unique, null]
+  email           varchar [not null, unique]
+  password        varchar [not null]
+  mobile_no       varchar [null]
+  mobile_country_code varchar [null]
+  otp_otp         int     [null]
+  otp_type        varchar [null]
+  otp_expired_at  datetime [null]
+  otp_is_active   boolean [default: false]
+  role            varchar [not null, default: 'user']
+  is_verified     boolean [default: false]
+  profile_image   varchar [null]
+  otp_verification_token varchar [null]
+  created_at      datetime [not null]
+  updated_at      datetime [not null]
+}
+
+Table books {
+  id             varchar [pk, unique]
+  title          varchar [not null]
+  author         varchar [not null]
+  genre          varchar [not null]
+  description    text    [null]
+  average_rating float   [default: 0]
+  created_at     datetime [not null]
+  updated_at     datetime [not null]
+}
+
+Table reviews {
+  id          varchar [pk, unique]
+  book_id     varchar [not null, ref: > books.id]
+  user_id     varchar [not null, ref: > users.id]
+  rating      int     [not null]
+  comment     text    [not null]
+  created_at  datetime [not null]
+  updated_at  datetime [not null]
+}

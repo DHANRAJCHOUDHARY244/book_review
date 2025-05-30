@@ -13,7 +13,7 @@ export const greetingContent = (email:string) => {
 
 export const registrationContent = (email:string) => {
     return greetingContent(email) + `<span
-    style="line-height: 22.4px;">Welcome to Devtown Family
+    style="line-height: 22.4px;">Welcome to our Family
     Family!</span></strong ></span ></p >
     <p style="line-height: 160%;"> </p>
     <p style="line-height: 160%; text-align: left;"><span

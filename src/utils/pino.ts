@@ -8,16 +8,16 @@ const logger = pino({
     transport: {
         targets: [
             //  -------------------------------- save logs in file
-            // {
-            //     target: 'pino-pretty',
-            //     options: {
-            //         destination: './logs/output.log',
-            //         mkdir: true,
-            //         colorize: false,
-            //         include: "processTitle,processId,hostname,time,level",
-            //         translateTime: "SYS: 'Date' dd/mm/yy HH:MM:ss",
-            //     }
-            // },
+            {
+                target: 'pino-pretty',
+                options: {
+                    destination: './logs/output.log',
+                    mkdir: true,
+                    colorize: false,
+                    include: "processTitle,processId,hostname,time,level",
+                    translateTime: "SYS: 'Date' dd/mm/yy HH:MM:ss",
+                }
+            },
             {
                 target: 'pino-pretty',
                 options: {

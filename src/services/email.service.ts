@@ -7,7 +7,7 @@ import logger from "@utils/pino";
 export const sendEmailRegistration = async (email:string) => {
     try {
         const template = emailTemplate(registrationContent(email));
-        const resp =await sendEmail(email, 'Enrolled new course', template);
+        const resp =await sendEmail(email, 'Wlc Sir!', template);
         logger.info(JSON.stringify(resp));
         return { ...resp };
     } catch (error) {

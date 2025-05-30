@@ -12,6 +12,8 @@
       "@constants/*": ["src/constants/*"],
       "@interfaces/*": ["src/interfaces/*"],
       "@config/*": ["src/config/*"],
+      "@data/*": ["src/data/*"],
+      "@middleware/*": ["src/middleware]/*"],
     },
     "moduleResolution": "node",
     "module": "CommonJS",

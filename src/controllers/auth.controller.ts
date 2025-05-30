@@ -18,6 +18,9 @@ import {
 import { OtpType } from "@constants/common.enum";
 import { faker } from "@faker-js/faker";
 import { IUser } from "@constants/user.enterface";
+import logger from "@utils/pino";
+
+const IS_EMAIL_SERVICE = process.env.IS_EMAIL_SERVICE === 'true';
 
 class AuthController {
   private async getUserInfo(user_data: IUser, is_remember = false) {
@@ -54,7 +57,7 @@ class AuthController {
         mobile_no,
         mobile_country_code,
         is_signup = true,
-        role = "customer",
+        role = "user",
       } = req.body;
 
       // Check if user exists by email or username
@@ -85,16 +88,21 @@ class AuthController {
         role,
       });
 
-      if (is_signup) {
+      // Send OTP conditionally
+      if (is_signup && IS_EMAIL_SERVICE) {
         await sendEmailOtp(email, {
           title: "OTP Email Verification Code",
           otp: genOtp,
         });
+        return ReS(res, SUCCESS_CODE, "User registered successfully. OTP sent to email.");
       }
-
-      return ReS(res, SUCCESS_CODE, "User registered successfully.");
+      const resData = await this.getUserInfo({ ...(user.toObject()), _id: user._id.toString() },false);
+      return ReS(res, SUCCESS_CODE, "User registered successfully. OTP returned in response.", {
+        otp: genOtp,
+        ...resData
+      });
     } catch (error: any) {
-      console.error(error);
+      logger.error(`${error}`)
       return ReE(res, SERVER_ERROR_CODE, `Server Error: ${error.message || error}`);
     }
   }
@@ -120,7 +128,7 @@ class AuthController {
       const resData = await this.getUserInfo({ ...user, _id: user._id.toString() }, is_remember);
       return ReS(res, SUCCESS_CODE, "Login successful", resData);
     } catch (error: any) {
-      console.error(error);
+      logger.error(`${error}`)
       return ReE(res, SERVER_ERROR_CODE, `Server Error: ${error.message || error}`);
     }
   }
@@ -156,7 +164,7 @@ class AuthController {
 
       return ReS(res, SUCCESS_CODE, "Password reset successfully.", resData);
     } catch (error: any) {
-      console.error(error);
+      logger.error(`${error}`)
       return ReE(res, SERVER_ERROR_CODE, `Server Error: ${error.message || error}`);
     }
   }
@@ -178,11 +186,15 @@ class AuthController {
           otp: genOtp,
           otp_type: OtpType.VERIFY_EMAIL,
           expired_at: new Date(Date.now() + 60 * 1000),
-          is_active: true,
         };
+        user.is_active= true;
         await user.save();
-        await sendEmailOtp(email, { title: "OTP Email Verification Code", otp: genOtp });
-        return ReS(res, SUCCESS_CODE, "Otp sent to your email");
+
+        if (IS_EMAIL_SERVICE) {
+          await sendEmailOtp(email, { title: "OTP Email Verification Code", otp: genOtp });
+          return ReS(res, SUCCESS_CODE, "Otp sent to your email");
+        }
+        return ReS(res, SUCCESS_CODE, "Otp generated successfully", { otp: genOtp });
       }
 
       if (!otp) return ReE(res, BAD_REQUEST_CODE, "Otp is required");
@@ -205,7 +217,7 @@ class AuthController {
 
       return ReS(res, SUCCESS_CODE, "Email verified successfully.", resData);
     } catch (error: any) {
-      console.error(error);
+      logger.error(`${error}`)
       return ReE(res, SERVER_ERROR_CODE, `Server Error: ${error.message || error}`);
     }
   }
@@ -224,22 +236,24 @@ class AuthController {
           otp: genOtp,
           otp_type: OtpType.FORGOT_PASSWORD,
           expired_at: new Date(Date.now() + 60 * 1000),
-          is_active: true,
         };
         await user.save();
-        await sendEmailOtp(email, { title: "OTP Forgot Password Code", otp: genOtp });
-        return ReS(res, SUCCESS_CODE, "Otp sent to your email");
+        if (IS_EMAIL_SERVICE) {
+          await sendEmailOtp(email, { title: "OTP Forgot Password Code", otp: genOtp });
+          return ReS(res, SUCCESS_CODE, "Otp sent to your email");
+        }
+        return ReS(res, SUCCESS_CODE, "Otp generated successfully", { otp: genOtp });
       }
 
       if (!otp) return ReE(res, BAD_REQUEST_CODE, "Otp is required");
 
-      const otpData = user.otp;
+      const otpData = (user.toObject()).otp;
 
       if (
         !otpData ||
-        otp !== otpData.otp.toString() ||
-        new Date(otpData.expired_at) < new Date() ||
-        otpData.otp_type !== OtpType.FORGOT_PASSWORD
+        parseInt(otp) !== otpData.otp ||
+        otpData.otp_type !== OtpType.FORGOT_PASSWORD ||
+        new Date(otpData.expired_at) < new Date() 
       )
         return ReE(res, BAD_REQUEST_CODE, "Invalid or expired otp");
 
@@ -256,7 +270,7 @@ class AuthController {
 
       return ReS(res, SUCCESS_CODE, "Otp verified successfully", { token: otpToken });
     } catch (error: any) {
-      console.error(error);
+      logger.error(`${error}`)
       return ReE(res, SERVER_ERROR_CODE, `Server Error: ${error.message || error}`);
     }
   }

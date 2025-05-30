@@ -10,9 +10,8 @@ export interface IUser {
     otp?: number;
     otp_type?: string;
     expired_at?: Date;
-    is_active?: boolean;
   };
-  role?: string;  // e.g., 'admin', 'customer'
+  role?: string;  // e.g., 'admin', 'user'
   is_verified?: boolean;
   profile_image?: string;
   avatar?: string;

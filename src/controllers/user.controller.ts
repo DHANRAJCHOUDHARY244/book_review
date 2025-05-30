@@ -10,17 +10,14 @@ import { AuthenticatedRequest } from "@constants/common.interface";
 import { s3Service } from "@services/s3.service";
 import fileUpload from "express-fileupload";
 import User from "@models/users.model"; // Mongoose User model
+import logger from "@utils/pino";
 
 class UserController {
   async deleteUser(req: AuthenticatedRequest, res: Response) {
     try {
-      const { userId } = req.body;
       const { user } = req;
-
+      const { id: userId } = user;
       if (!userId) return ReE(res, FORBIDDEN_CODE, "userId is required");
-      if (user._id.toString() === userId)
-        return ReE(res, FORBIDDEN_CODE, "You can't delete yourself");
-
       const userToDelete = await User.findById(userId);
       if (!userToDelete)
         return ReE(res, BAD_REQUEST_CODE, "User not found");
@@ -28,7 +25,7 @@ class UserController {
       await User.findByIdAndDelete(userId);
       return ReS(res, SUCCESS_CODE, "User deleted successfully");
     } catch (error) {
-      console.error("Error deleting user:", error);
+       logger.error(`Error deleting user: ${error}`)
       return ReE(res, SERVER_ERROR_CODE, "Something went wrong");
     }
   }
@@ -41,6 +38,7 @@ class UserController {
       if (!files || !files.files)
         return ReE(res, FORBIDDEN_CODE, "No file uploaded.");
 
+      const userData = await User.findById(user._id).lean();
       const file = files.files as fileUpload.UploadedFile;
       const file_name = "profile-image-" + generateUUID();
 
@@ -50,12 +48,13 @@ class UserController {
         file.mimetype,
       );
 
-      const oldImageUrl = user.profile_image;
 
-      // Update profile image in DB
-      await User.findByIdAndUpdate(user._id, {
+      const oldImageUrl = userData?.profile_image;
+      await User.findByIdAndUpdate(user.id, {
         profile_image: fileUrl,
       });
+
+      // Update profile image in DB
 
       // Delete old image from S3 if it exists
       if (oldImageUrl) {
@@ -68,17 +67,35 @@ class UserController {
         profile_image: fileUrl,
       });
     } catch (error) {
-      console.error("Error updating profile image:", error);
+       logger.error(`Error updating profile image: ${error}`)
       return ReE(res, SERVER_ERROR_CODE, `Server Error: ${error}`);
     }
   }
 
-  async editUser(req: AuthenticatedRequest, res: Response) {
+  async updateUser(req: AuthenticatedRequest, res: Response) {
     try {
-      // Add your logic for editing user info here
-      const {} = req.body;
+      const { name, email, mobile_no, mobile_country_code } = req.body;
+      const { user } = req;
+      const { id:userId } = user;
+      if (!userId) return ReE(res, FORBIDDEN_CODE, "userId is required");
+
+      const userToUpdate = await User.findById(userId);
+      if (!userToUpdate) return ReE(res, BAD_REQUEST_CODE, "User not found");
+
+      // Update user details
+      userToUpdate.name = name || userToUpdate.name;
+      userToUpdate.email = email || userToUpdate.email;
+      userToUpdate.mobile_no = mobile_no || userToUpdate.mobile_no;
+      userToUpdate.mobile_country_code =
+      mobile_country_code || userToUpdate.mobile_country_code;
+
+      await userToUpdate.save();
+
+      return ReS(res, SUCCESS_CODE, "User updated successfully", {
+        user: userToUpdate,
+      });
     } catch (error) {
-      console.error("Error in updating users:", error);
+       logger.error(`Error in updating users: ${error}`)
       return ReE(res, SERVER_ERROR_CODE, "Something went wrong");
     }
   }

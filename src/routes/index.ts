@@ -1,17 +1,16 @@
 import express from 'express';
 const router = express.Router();
 import authRoutes from './auth.routes';
-import permissionRoutes from './permissions.routes';
-import installerRoutes from './installer.routes';
-import customerRoutes from './customer.routes';
+import bookRoutes from './book.routes';
+import reviewRoutes from './reviews.routes';
+import userRoutes from './user.routes';
+import { authenticate } from 'src/middleware/auth.middleware';
 
-router.get('/',(req,res)=>{
-    res.send("OK")
-})
 router.use('/auth', authRoutes);
-router.use('/permission',permissionRoutes);
-router.use('/v1/installer',installerRoutes);
-router.use('/v1/customer',customerRoutes);
+router.use('/books',bookRoutes);
+router.use('/reviews', reviewRoutes);
+router.use("/v1/*",authenticate.bind(authenticate))
+router.use('/v1/users', userRoutes); 
 
 
 export default router;

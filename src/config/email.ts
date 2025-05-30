@@ -1,4 +1,3 @@
-import logger from "@utils/pino";
 
 const nodemailer = require("nodemailer");
 

@@ -11,12 +11,30 @@ export interface IReview extends Document {
 
 const ReviewSchema = new Schema<IReview>(
   {
-    book: { type: Schema.Types.ObjectId, ref: "Book", required: true },
-    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String, required: true, trim: true },
+    book: {
+      type: Schema.Types.ObjectId,
+      ref: "Book",
+      required: true,
+    },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    comment: {
+      type: String,
+      required: true,
+      trim: true,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true, // Automatically manage createdAt and updatedAt fields
+  }
 );
-
 export default model<IReview>("Review", ReviewSchema);

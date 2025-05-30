@@ -1,98 +1,129 @@
-import mongoose from "mongoose";
 import User from "@models/users.model";
 import Book from "@models/book.model";
 import Review from "@models/review.model";
+import logger from "@utils/pino";
+import { generate_Hash_Password } from "@services/generalHelper.service";
 
 async function seedDummyData() {
   try {
-    await mongoose.connect("mongodb://localhost:27017/your-db-name");
 
-    // Clear existing data
-    await User.deleteMany({});
-    await Book.deleteMany({});
-    await Review.deleteMany({});
-
-    // Insert users
-    const users = await User.insertMany([
+    const usersPayload = [
       {
         name: "Alice Johnson",
         username: "alicej",
         email: "alice@example.com",
-        password: "hashedpassword1", // use bcrypt hashed passwords in real use
-        role: "customer",
+        password: await generate_Hash_Password("alicej"),
+        role: "user",
+        is_active: true,
         is_verified: true,
       },
       {
         name: "Bob Smith",
         username: "bobsmith",
         email: "bob@example.com",
-        password: "hashedpassword2",
-        role: "customer",
+        password: await generate_Hash_Password("bobsmith"),
+        role: "user",
+        is_active: true,
         is_verified: true,
       },
       {
-        name: "Charlie Admin",
-        username: "charlieadmin",
-        email: "charlie@example.com",
-        password: "hashedpassword3",
+        name: "dhanraj Admin",
+        username: "dhanrajadmin",
+        email: "dhanraj@example.com",
+        password: await generate_Hash_Password("dhanrajadmin"),
         role: "admin",
+        is_active: true,
         is_verified: true,
       },
-    ]);
+    ];
 
-    // Insert books
-    const books = await Book.insertMany([
+    const insertedUsers = [];
+
+    for (const userData of usersPayload) {
+      const exists = await User.findOne({ $or: [{ email: userData.email }, { username: userData.username }] });
+      if (!exists) {
+        const newUser = await User.create(userData);
+        insertedUsers.push(newUser);
+      } else {
+        logger.info(`User already exists: ${userData.email}`);
+        insertedUsers.push(exists);
+      }
+    }
+
+    const booksPayload = [
       {
         title: "The Great Gatsby",
         author: "F. Scott Fitzgerald",
         genre: "Classic",
         description: "A novel set in the Jazz Age...",
-        averageRating: 0,
-        reviews: [],
       },
       {
         title: "1984",
         author: "George Orwell",
         genre: "Dystopian",
         description: "A story about totalitarianism...",
-        averageRating: 0,
-        reviews: [],
       },
       {
         title: "To Kill a Mockingbird",
         author: "Harper Lee",
         genre: "Classic",
         description: "A novel about racial injustice...",
-        averageRating: 0,
-        reviews: [],
       },
-    ]);
+    ];
 
-    // Insert reviews (link to users and books)
-    const reviews = await Review.insertMany([
+    const insertedBooks = [];
+
+    for (const bookData of booksPayload) {
+      const exists = await Book.findOne({ title: bookData.title });
+      if (!exists) {
+        const newBook = await Book.create({ ...bookData, averageRating: 0, reviews: [] });
+        insertedBooks.push(newBook);
+      } else {
+        logger.info(`Book already exists: ${bookData.title}`);
+        insertedBooks.push(exists);
+      }
+    }
+
+    const reviewsPayload = [
       {
-        book: books[0]._id,
-        user: users[0]._id,
+        book: insertedBooks[0]._id,
+        user: insertedUsers[0]._id,
         rating: 5,
         comment: "Loved the storytelling and characters!",
       },
       {
-        book: books[0]._id,
-        user: users[1]._id,
+        book: insertedBooks[0]._id,
+        user: insertedUsers[1]._id,
         rating: 4,
         comment: "Great classic but a bit slow at times.",
       },
       {
-        book: books[1]._id,
-        user: users[0]._id,
+        book: insertedBooks[1]._id,
+        user: insertedUsers[0]._id,
         rating: 5,
         comment: "A terrifying yet important book.",
       },
-    ]);
+    ];
 
-    // Update books with reviews and averageRating
-    for (const book of books) {
-      const bookReviews = reviews.filter((r) => r.book.toString() === book._id.toString());
+    const insertedReviews = [];
+
+    for (const reviewData of reviewsPayload) {
+      const exists = await Review.findOne({
+        book: reviewData.book,
+        user: reviewData.user,
+      });
+
+      if (!exists) {
+        const newReview = await Review.create(reviewData);
+        insertedReviews.push(newReview);
+      } else {
+        logger.info(`Review already exists for user ${reviewData.user} on book ${reviewData.book}`);
+        insertedReviews.push(exists);
+      }
+    }
+
+    for (const book of insertedBooks) {
+      const bookReviews = insertedReviews.filter((r) => r.book.toString() === book._id.toString());
       const avgRating = bookReviews.length
         ? bookReviews.reduce((acc, cur) => acc + cur.rating, 0) / bookReviews.length
         : 0;
@@ -102,10 +133,10 @@ async function seedDummyData() {
       await book.save();
     }
 
-    console.log("Dummy data seeded successfully");
+    logger.info("Dummy data seeded successfully ");
     process.exit(0);
   } catch (error) {
-    console.error("Error seeding dummy data:", error);
+    logger.error(`Error seeding dummy data: ${error}`);
     process.exit(1);
   }
 }
